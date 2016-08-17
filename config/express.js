@@ -18,15 +18,16 @@ var 	async = require('async'),
  * @param callback
  */
 module.exports = function(config, pluginController, callback) {
-    var app = express();
+	var app = express();
 	app.locals.config = config;
 	app.locals.pluginController = pluginController;
 	app.locals.passport = passport;
 	app.locals.controllers = {
+		apiController: require('../app/controllers/api'),
 		auth: {
-			permissionController : require('../app/controllers/auth/permission.auth.server.controller'),
-			strategyController : require('../app/controllers/auth/strategy.auth.server.controller'),
-			userController : require('../app/controllers/auth/user.auth.server.controller')
+			permissionController : require('../app/controllers/auth/permission'),
+			strategyController : require('../app/controllers/auth/strategy'),
+			userController : require('../app/controllers/auth/user')
 		},
 		pluginController : pluginController
 	};
@@ -66,17 +67,6 @@ module.exports = function(config, pluginController, callback) {
 	// NOTE: You should always cache templates in a production environment.
 	// Don't leave both of these to `false` in production!
 
-	//separate the static folders away from admin
-	app.use(vhost('*.*', express.static('./static/public')));
-	/*app.use('/public', function(req, res, next) {
-		if (env != 'development') {
-			var result = req.url.match(/^.+\.swig$/);
-			if (result) {
-				return res.status(403).end('403 Forbidden')
-			}
-		}
-		next();
-	});*/
 	app.use(vhost('*.*', express.static('./app/views')));
 
 	app.use(expressSession({
@@ -91,15 +81,12 @@ module.exports = function(config, pluginController, callback) {
 
 	//TODO pass plugin manager
 	// Initialize Passport
-	require('../app/controllers/auth.server.controller.js')(app);
+	require('../app/controllers/auth')(app);
 
 
 	//Includes all the files found directly in /app/routes , none in sub directories
 	dir.filesLocal(__dirname+'/../app/routes/',function(routes){
 		console.log('Routes:\n',routes);
-		/*for(var route in routes) {
-			require(routes[route])(app, passport);
-		}*/
 		async.each(routes, function(route, next){
 			require(route)(app, next);
 		}, function(){
